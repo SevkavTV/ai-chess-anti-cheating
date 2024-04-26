@@ -139,28 +139,26 @@ def compute_piece_activity_metrics(board):
     center_squares = [chess.E4, chess.D4, chess.E5, chess.D5]
     piece_values = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
 
-    # Mobility: Count of all legal moves weighted by piece values
     mobility = sum(piece_values[board.piece_at(move.from_square).piece_type] for move in board.legal_moves)
 
-    # Control of Center: Sum of piece values for pieces that can move to or control center squares
     control_of_center = 0
     for square in center_squares:
         if board.is_attacked_by(board.turn, square):
             control_of_center += sum(piece_values.get(board.piece_at(attacker).piece_type, 0)
                                      for attacker in board.attackers(board.turn, square)
                                      if board.piece_at(attacker))
+        
+        piece = board.piece_at(square)
+        if piece and piece.color == board.turn:
+            control_of_center += piece_values.get(piece.piece_type, 0)
 
-    # Advanced Pawns: Count pawns beyond the fourth rank (from their perspective)
     advanced_pawns = sum(1 for pawn in board.pieces(chess.PAWN, board.turn) 
                          if (chess.square_rank(pawn) < 4 if board.turn == chess.BLACK else chess.square_rank(pawn) > 3))
 
-    # Developed Pieces: Counts pieces not in their initial positions (suggesting development)
     developed_pieces = calculate_developed_pieces(board)
 
-    # Space Control: Count of all squares attacked by the player’s pieces
     space_control = sum(1 for square in chess.SQUARES if board.is_attacked_by(board.turn, square))
 
-    # Restore the original turn after calculations
     board.turn = not board.turn
 
     return {
@@ -323,7 +321,7 @@ def compute_forks(board):
     """
     forks = 0
     opponent_color = not board.turn
-    value_threshold = 3  # Only consider forks involving pieces of at least this value (Rook, Queen)
+    value_threshold = 3 
 
     for move in board.legal_moves:
         board.push(move)
